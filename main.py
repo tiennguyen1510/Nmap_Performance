@@ -142,8 +142,10 @@ def sendLog(name, cate, status):
 # function with command and logic for tool
 def run(file_name):
 	arr_file = []
+	num_lines = sum(1 for line in open(list_prod))
 	print "vao ham run roi"
 	with open(file_name) as myfile:
+		count = 0
 		for line in myfile:
 			print line
 			line = line.split("\t")
@@ -152,7 +154,7 @@ def run(file_name):
 			domain = str(line[1]).replace("\n","")
 			arr_file.append(ip + "_" + domain +".txt")
 
-			cmd = "nohup sh -c 'sudo nmap -p- -Pn " + ip.strip() + "| grep open > /tmp/"+ ip + "_" + domain +".txt' &"
+			cmd = "nohup sh -c 'sudo nmap -p- " + ip.strip() + "| grep open > /tmp/"+ ip + "_" + domain +".txt' &"
         		try:
 				print "chay processes"
                 		ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
@@ -160,17 +162,30 @@ def run(file_name):
 	       		except:
 	               		sendLog("nmap","ERROR","Error. Check log in /var/log/.log ")
 	       		output = ps.communicate()[0]
-            
-	while True:
-		time.sleep(1)
-		cmd_check = 'ps -ef | grep -E -o "/tmp/([0-9]{1,3}[\.]){3}[0-9]{1,3}" |wc -l'
-		count = os.popen(cmd_check).read()
-		if "0" in count:
-			print "Breaked"
-			break
+			count += 1
+			
+			if (count == num_lines):
+				while True:
+					print "dieu kien bang"
+					time.sleep(1)
+					cmd_check = 'ps -ef | grep -E -o "/tmp/([0-9]{1,3}[\.]){3}[0-9]{1,3}" |wc -l'
+					count_proccess = os.popen(cmd_check).read()
+					print "proccess: " + count_proccess
+					if ("0" in count_proccess):
+						break
+			else:
+				while True:
+					time.sleep(1)
+                                        cmd_check = 'ps -ef | grep -E -o "/tmp/([0-9]{1,3}[\.]){3}[0-9]{1,3}" |wc -l'
+ 					count_proccess = os.popen(cmd_check).read()
+					print "proccess: " + count_proccess
+                                        if num_1_run > int(count_proccess):
+                                                break
+
 	print arr_file
 	for file in arr_file:
 		parse(file)
+
 
 # function parse to ouput from nmap file
 def parse(file_name):
