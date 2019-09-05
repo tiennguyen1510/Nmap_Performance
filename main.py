@@ -223,18 +223,14 @@ def main():
 	print datetime.date.today()
 	print ip_host
 	compare()
-	count = 0
-	count_file = 0
+	start = time.time()
 	for key, value in ip_host.items():
-		if count % num_1_run == 0:
-			print "Block " + str(count / num_1_run)
-			count_file += 1
-		with open("test/" + str(count_file) + ".txt", "a") as urlfile:
-                	urlfile.write(value + "\t" + key + "\n")
-    		count+=1
-	print "Writed to file with number IP"
-	for i in range(0,num_block):
-		run("test/"+str(i+1)+".txt")
+		with open("/tmp/ip_domain.txt", "a") as urlfile:
+	               	urlfile.write(value + "\t" + key + "\n")
+	run("/tmp/ip_domain.txt")
+	open("/tmp/ip_domain.txt","w").close()
+	end = time.time()
+	print "Time for script: " + str(end - start)
 	sendLog("test.py","INFO","Completed ")
 	os.system("rm /test/*.txt")       # Warning: select accuracy path
 	
