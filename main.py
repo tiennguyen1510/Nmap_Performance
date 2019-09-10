@@ -24,7 +24,8 @@ with open(list_prod) as file:
 			ip_host[line[0]] = line[2]
 
 # define number ip run once time so that calculated block number server
-num_1_run = 10
+num_1_run = 20
+time_limit = "1800"
 num_block = len(ip_host.keys()) % num_1_run
 
 if num_block > 0:
@@ -36,7 +37,7 @@ else:
 def modifierList():
 	keyword_exception = ["_FN_BTC_","_FN_BTH_"]
 	ip_port = {}
-	with open("ip-port-exc.txt") as file:
+	with open("/home/snmap/scripts/infinito/ip-port-exc.txt") as file:
 		for line in file:
 			line = line.split("\t")
 			line[1] = line[1].replace("\n","")
@@ -69,7 +70,6 @@ def modifierList():
 
 	return ip_re
 
-# using it if you use Hangout chat
 def sendGG(text, url_input):
 	url = url_input
 	bot_message = {'text' : text}
@@ -84,14 +84,13 @@ def sendGG(text, url_input):
 		body=dumps(bot_message),
 	)
 
-# function send SQL because using Grafana or more
 def sendSQL(a, b, c):
 	import mysql.connector
 	mydb = mysql.connector.connect(
 			host="localhost",
-			user="admin",         # your type
-			passwd="password",    # your type
-			database="nmapscan"   # your type
+			user="snmap",
+			passwd="P4ssw0rd123!",
+			database="nmapscan"
 	)
 
 	mycursor = mydb.cursor()
@@ -102,10 +101,9 @@ def sendSQL(a, b, c):
 
 	mydb.commit()
 
-# function compare list server because list server real-time changing
 def compare():
-	if os.path.isfile('/log/serverlist.prod.bak'):
-		cmd = "diff -w /tmp/serverlist.prod /log/serverlist.prod.bak"		# change location for file
+	if os.path.isfile('/home/snmap/scripts/infinito/log/serverlist.prod.bak'):
+		cmd = "diff -w /tmp/serverlist.prod /home/snmap/scripts/infinito/log/serverlist.prod.bak"		# change location for file
 		result = os.popen(cmd).read()
 		components = result.split("\n")
 		tmp_add = ""
@@ -127,23 +125,22 @@ def compare():
 		if tmp_sub:
 			tmp_sub = "[SUB] IP in serverlist: \n" + tmp_sub
 			sendGG(tmp_sub, url_test)
-		os.system("cp /tmp/serverlist.prod /log/serverlist.prod.bak")
+		os.system("cp /tmp/serverlist.prod /home/snmap/scripts/infinito/log/serverlist.prod.bak")
 	else:
-		os.system("cp /tmp/serverlist.prod /log/serverlist.prod.bak")		# change location for file
+		os.system("cp /tmp/serverlist.prod /home/snmap/scripts/infinito/log/serverlist.prod.bak")		# change location for file
 		print "coppy"
 
-# function with format log notify in chat channel
+
 def sendLog(name, cate, status):
         dt = datetime.datetime.now()
         d = str(dt).split(" ")
         message = "```" + d[0] + " | " + d[1] + " | " + name + "\t| " + cate + " | [PROD] Scanning port is " + status + "!```"
 	sendGG(message, url_test)
 
-# function with command and logic for tool
 def run(file_name):
 	arr_file = []
-	num_lines = sum(1 for line in open(list_prod))
-	print "vao ham run roi"
+	num_lines = sum(1 for line in open(file_name))
+	open("/tmp/late_file.txt","w").close()
 	with open(file_name) as myfile:
 		count = 0
 		for line in myfile:
@@ -154,7 +151,7 @@ def run(file_name):
 			domain = str(line[1]).replace("\n","")
 			arr_file.append(ip + "_" + domain +".txt")
 
-			cmd = "nohup sh -c 'sudo nmap -p- " + ip.strip() + "| grep open > /tmp/"+ ip + "_" + domain +".txt' &"
+			cmd = "nohup sh -c 'sudo nmap -p- " + ip.strip() + " | grep open > /tmp/"+ ip + "_" + domain +".txt' &"
         		try:
 				print "chay processes"
                 		ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
@@ -163,31 +160,39 @@ def run(file_name):
 	               		sendLog("nmap","ERROR","Error. Check log in /var/log/.log ")
 	       		output = ps.communicate()[0]
 			count += 1
-			
-			if (count == num_lines):
+			print "so luong: " + str(count)	
+			if (count == (num_lines - 1)):
 				while True:
-					print "dieu kien bang"
+					print "Waiting proccess 0"
 					time.sleep(1)
-					cmd_check = 'ps -ef | grep -E -o "/tmp/([0-9]{1,3}[\.]){3}[0-9]{1,3}" |wc -l'
-					count_proccess = os.popen(cmd_check).read()
+					cmd_check_time_write = "ps -eo comm,pid,etimes,user,cmd | awk '/^sh/ {if ($3 > " + time_limit +" && $4==\"snmap\") { print $10}}' >> /tmp/late_file.txt"
+					os.system(cmd_check_time_write)
+					cmd_kill_late = "kill -9 $(ps -eo comm,pid,etimes,user,cmd | awk '/^sh/ {if ($3 > " + time_limit +" && $4==\"snmap\") { print $2}}')"
+					os.system(cmd_kill_late)
+					cmd_check_pro = 'ps -ef | grep -E -o "/tmp/([0-9]{1,3}[\.]){3}[0-9]{1,3}" |wc -l'
+					count_proccess = os.popen(cmd_check_pro).read()
 					print "proccess: " + count_proccess
-					if ("0" in count_proccess):
+					if (int(count_proccess) == 0):
 						break
 			else:
 				while True:
+					print "[*] Add proccess!"
 					time.sleep(1)
+                                        time.sleep(1)
+                                        cmd_check_time_write = "ps -eo comm,pid,etimes,user,cmd | awk '/^sh/ {if ($3 > " + time_limit +" && $4==\"snmap\") { print $10}}' >> /tmp/late_file.txt"
+                                        os.system(cmd_check_time_write)
+                                        cmd_kill_late = "kill -9 $(ps -eo comm,pid,etimes,user,cmd | awk '/^sh/ {if ($3 > " + time_limit +" && $4==\"snmap\") { print $2}}')"
+                                        os.system(cmd_kill_late)
                                         cmd_check = 'ps -ef | grep -E -o "/tmp/([0-9]{1,3}[\.]){3}[0-9]{1,3}" |wc -l'
  					count_proccess = os.popen(cmd_check).read()
 					print "proccess: " + count_proccess
                                         if num_1_run > int(count_proccess):
                                                 break
-
-	print arr_file
+						
+	cmd_sort_log = "sort /tmp/late_file.txt | uniq > /tmp/last_late_file.txt"
 	for file in arr_file:
 		parse(file)
 
-
-# function parse to ouput from nmap file
 def parse(file_name):
 	ip_kw = modifierList()
 	
@@ -213,25 +218,21 @@ def parse(file_name):
 					list_port_sql = list_port_sql + port_number + ", "
 
 			if (flag_port == True):
-                        	#sendSQL(ip, list_port_sql, domain)
+                        	sendSQL(ip, list_port_sql, domain)
                         	sendGG(a, url_test)	
-	print ip
 
-# function main control flow for tool
 def main():
 	sendLog("main.py","INFO","Starting ")
 	print datetime.date.today()
-	print ip_host
 	compare()
+	open("/tmp/ip_domain.txt","w").close()	#delete data older
 	start = time.time()
 	for key, value in ip_host.items():
 		with open("/tmp/ip_domain.txt", "a") as urlfile:
 	               	urlfile.write(value + "\t" + key + "\n")
 	run("/tmp/ip_domain.txt")
-	open("/tmp/ip_domain.txt","w").close()
 	end = time.time()
 	print "Time for script: " + str(end - start)
 	sendLog("test.py","INFO","Completed ")
-	os.system("rm /test/*.txt")       # Warning: select accuracy path
-	
+		
 main()
